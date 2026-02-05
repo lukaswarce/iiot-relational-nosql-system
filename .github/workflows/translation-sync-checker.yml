@@ -12,6 +12,11 @@ on:
       - 'docs/**/*.md'
       - 'README*.md'
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 jobs:
   check-translation-sync:
     runs-on: ubuntu-latest
