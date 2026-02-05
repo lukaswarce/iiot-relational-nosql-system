@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagrama ER - MySQL</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .mermaid {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .info {
+            background: #e8f4f8;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📐 Diagrama Entidad-Relación - MySQL</h1>
+        <div class="info">
+            <strong>Sistema IIoT - Base de Datos Relacional</strong><br>
+            Este diagrama muestra las 8 tablas principales y sus relaciones con Foreign Keys.
+        </div>
+        
+        <div class="mermaid">
+erDiagram
+    production_lines ||--o{ production_batches : "tiene"
+    production_lines ||--o{ sensor_metadata : "contiene"
+    production_batches ||--o{ quality_inspections : "recibe"
+    production_batches ||--o{ production_events : "registra"
+    
+    production_lines {
+        INT line_id PK
+        VARCHAR line_name UK
+        VARCHAR location
+        INT capacity_units_per_hour
+        ENUM status
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+    
+    production_batches {
+        INT batch_id PK
+        INT line_id FK
+        VARCHAR batch_code UK
+        VARCHAR product_type
+        TIMESTAMP start_time
+        TIMESTAMP end_time
+        INT target_quantity
+        INT actual_quantity
+        ENUM status
+    }
+    
+    quality_inspections {
+        INT inspection_id PK
+        INT batch_id FK
+        TIMESTAMP inspection_time
+        VARCHAR inspector_name
+        DECIMAL quality_score
+        BOOLEAN passed "GENERATED"
+        INT defects_found
+        TEXT notes
+    }
+    
+    production_events {
+        INT event_id PK
+        INT batch_id FK
+        ENUM event_type
+        TIMESTAMP event_time
+        INT quantity_at_event
+        VARCHAR operator_id
+        TEXT event_description
+    }
+    
+    sensor_metadata {
+        VARCHAR sensor_id PK
+        ENUM sensor_type
+        VARCHAR location
+        INT line_id FK
+        VARCHAR unit_of_measure
+        DECIMAL min_value
+        DECIMAL max_value
+        DATE calibration_date
+        DATE next_calibration_date
+        ENUM status
+    }
+    
+    system_alerts {
+        INT alert_id PK
+        ENUM alert_source
+        ENUM alert_type
+        ENUM severity
+        VARCHAR mqtt_topic
+        VARCHAR sensor_id
+        DECIMAL alert_value
+        DECIMAL threshold_value
+        TEXT alert_message
+        BOOLEAN acknowledged
+        TIMESTAMP created_at
+    }
+    
+    sensor_readings {
+        INT id PK
+        VARCHAR sensor_id
+        VARCHAR sensor_type
+        DECIMAL value
+        VARCHAR unit
+        VARCHAR location
+        TIMESTAMP timestamp
+    }
+    
+    mqtt_messages_log {
+        BIGINT log_id PK
+        VARCHAR topic
+        JSON payload
+        TINYINT qos
+        BOOLEAN retained
+        TIMESTAMP received_at
+    }
+        </div>
+        
+        <div class="info">
+            <strong>💡 Conceptos Demostrados:</strong>
+            <ul>
+                <li>Primary Keys (PK) - Identificadores únicos</li>
+                <li>Foreign Keys (FK) - Relaciones entre tablas</li>
+                <li>Unique Keys (UK) - Valores únicos no primarios</li>
+                <li>Cardinalidad: One-to-Many (||--o{)</li>
+                <li>Integridad Referencial - Constraints CASCADE/RESTRICT</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            er: {
+                useMaxWidth: true
+            }
+        });
+    </script>
+</body>
+</html>

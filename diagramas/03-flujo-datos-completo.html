@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flujo de Datos - Sistema IIoT</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #e74c3c;
+            padding-bottom: 10px;
+        }
+        .mermaid {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .info {
+            background: #fdecea;
+            padding: 15px;
+            border-left: 4px solid #e74c3c;
+            margin: 20px 0;
+        }
+        .architecture-layer {
+            background: #ecf0f1;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Flujo de Datos - Arquitectura IIoT Completa</h1>
+        <div class="info">
+            <strong>Arquitectura Polyglot Persistence</strong><br>
+            Sistema que utiliza múltiples tipos de bases de datos según las necesidades específicas de cada tipo de dato.
+        </div>
+        
+        <h2>Flujo Principal de Datos</h2>
+        <div class="mermaid">
+graph LR
+    subgraph "🎯 Generación"
+        A[Node-RED<br/>Simuladores]
+    end
+    
+    subgraph "📡 Transporte"
+        B[Mosquitto<br/>MQTT Broker]
+    end
+    
+    subgraph "💾 Almacenamiento"
+        C[InfluxDB<br/>Time-Series]
+        D[MySQL<br/>Relacional]
+    end
+    
+    subgraph "📊 Visualización"
+        E[Grafana<br/>Dashboards]
+    end
+    
+    subgraph "🔧 Administración"
+        F[Adminer<br/>MySQL UI]
+    end
+    
+    A -->|Publish<br/>MQTT| B
+    B -->|Subscribe<br/>iiot/sensors/#| C
+    B -->|Subscribe<br/>iiot/sensors/#| D
+    C -->|Query<br/>Flux| E
+    D -->|Query<br/>SQL| E
+    D -->|Admin<br/>HTTP| F
+    
+    style A fill:#95e1d3
+    style B fill:#f38181
+    style C fill:#aa96da
+    style D fill:#fcbad3
+    style E fill:#a8d8ea
+    style F fill:#ffd89b
+        </div>
+        
+        <h2>Flujo de Integración Detallado</h2>
+        <div class="mermaid">
+sequenceDiagram
+    participant S as 📟 Sensor/Simulator
+    participant M as 📡 MQTT Broker
+    participant I as 🕐 InfluxDB
+    participant NR as 🔴 Node-RED
+    participant MY as 💾 MySQL
+    participant G as 📊 Grafana
+    
+    Note over S,G: 1. Escritura de Datos en Tiempo Real
+    S->>M: Publish temperatura: 85.5°C
+    M->>I: Store en measurement "temperature"
+    M->>MY: Store en tabla "sensor_readings"
+    
+    Note over S,G: 2. Detección y Generación de Alertas
+    NR->>I: Query: últimas temperaturas
+    I-->>NR: Return: avg 85°C
+    NR->>NR: Evaluar: temp > 80°C
+    NR->>MY: INSERT alerta en "system_alerts"
+    
+    Note over S,G: 3. Visualización Multi-Database
+    G->>I: Query Flux: tendencia 1h
+    I-->>G: Time-series data
+    G->>MY: Query SQL: alertas activas
+    MY-->>G: Relational data
+    G->>G: Combinar en dashboard
+        </div>
+        
+        <div class="architecture-layer">
+            <h3>🏗️ Capas de la Arquitectura</h3>
+            <ol>
+                <li><strong>Capa de Generación</strong> - Node-RED simula sensores industriales</li>
+                <li><strong>Capa de Transporte</strong> - MQTT broker maneja pub/sub en tiempo real</li>
+                <li><strong>Capa de Almacenamiento Dual</strong>:
+                    <ul>
+                        <li>InfluxDB: Datos de series temporales (alto volumen)</li>
+                        <li>MySQL: Datos transaccionales y metadatos</li>
+                    </ul>
+                </li>
+                <li><strong>Capa de Procesamiento</strong> - Node-RED evalúa reglas y genera alertas</li>
+                <li><strong>Capa de Visualización</strong> - Grafana consulta ambas bases de datos</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <strong>🎯 Decisiones de Diseño:</strong>
+            <ul>
+                <li><strong>MQTT</strong> - Protocolo ligero ideal para IIoT (QoS, retained messages)</li>
+                <li><strong>InfluxDB</strong> - Miles de lecturas/segundo, consultas temporales rápidas</li>
+                <li><strong>MySQL</strong> - Integridad referencial, transacciones ACID, reportes complejos</li>
+                <li><strong>Grafana</strong> - Unifica visualización de múltiples fuentes de datos</li>
+            </ul>
+        </div>
+        
+        <h2>Puertos y Accesos</h2>
+        <div class="architecture-layer">
+            <ul>
+                <li><strong>Node-RED</strong>: http://localhost:1880</li>
+                <li><strong>MQTT</strong>: mqtt://localhost:1883 (protocolo) | ws://localhost:9001 (websockets)</li>
+                <li><strong>InfluxDB</strong>: http://localhost:8086 (admin/admin123)</li>
+                <li><strong>MySQL</strong>: localhost:3306 (student/student123)</li>
+                <li><strong>Grafana</strong>: http://localhost:3000 (admin/admin)</li>
+                <li><strong>Adminer</strong>: http://localhost:8080 (MySQL UI)</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default'
+        });
+    </script>
+</body>
+</html>

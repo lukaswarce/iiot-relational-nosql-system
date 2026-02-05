@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conceptos MySQL - ACID y Relaciones</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #27ae60;
+            padding-bottom: 10px;
+        }
+        .mermaid {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .concept-box {
+            background: #e8f8f5;
+            padding: 20px;
+            border-left: 4px solid #27ae60;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .code-example {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Conceptos Fundamentales - MySQL Relacional</h1>
+        
+        <h2>Mapa Mental: Conceptos ACID</h2>
+        <div class="mermaid">
+mindmap
+  root((MySQL<br/>ACID))
+    Atomicity
+      Todo o Nada
+      BEGIN TRANSACTION
+      COMMIT completo
+      ROLLBACK si error
+      No estados parciales
+    Consistency
+      Datos válidos
+      Constraints activos
+      Foreign Keys
+      CHECK constraints
+      Triggers validan
+    Isolation
+      Transacciones independientes
+      Niveles de aislamiento
+      READ COMMITTED
+      REPEATABLE READ
+      SERIALIZABLE
+      Evita race conditions
+    Durability
+      Persistencia garantizada
+      Después de COMMIT
+      Sobrevive crashes
+      Write-Ahead Log
+      Recuperación automática
+        </div>
+        
+        <div class="concept-box">
+            <h3>🔒 Propiedad A - Atomicity (Atomicidad)</h3>
+            <p><strong>Definición:</strong> Una transacción es una unidad atómica - o se ejecuta completamente o no se ejecuta en absoluto.</p>
+            
+            <p><strong>Ejemplo del Mundo Real:</strong> Transferencia bancaria - si falla el depósito, el retiro también debe deshacerse.</p>
+            
+            <div class="code-example">
+<strong>-- Ejemplo de Transacción Atómica:</strong>
+
+START TRANSACTION;
+
+-- Paso 1: Registrar nuevo lote
+INSERT INTO production_batches 
+(line_id, batch_code, target_quantity)
+VALUES (1, 'BATCH_2026_100', 1000);
+
+-- Paso 2: Registrar evento de inicio
+INSERT INTO production_events 
+(batch_id, event_type, event_description)
+VALUES (LAST_INSERT_ID(), 'start', 'Batch iniciado');
+
+-- Si TODO es exitoso:
+COMMIT; -- ✅ Ambos INSERT se confirman
+
+-- Si HAY ERROR:
+ROLLBACK; -- ❌ Ambos INSERT se deshacen</div>
+        </div>
+        
+        <div class="concept-box">
+            <h3>✅ Propiedad C - Consistency (Consistencia)</h3>
+            <p><strong>Definición:</strong> La base de datos siempre pasa de un estado válido a otro estado válido.</p>
+            
+            <p><strong>Ejemplo:</strong> Los constraints garantizan que nunca haya datos inválidos.</p>
+            
+            <div class="code-example">
+<strong>-- Constraints que mantienen consistencia:</strong>
+
+-- ❌ Esto FALLARÁ (cantidad negativa):
+INSERT INTO production_batches 
+(line_id, batch_code, target_quantity, actual_quantity)
+VALUES (1, 'BATCH_TEST', 1000, -50);
+-- Error: chk_actual_quantity violated
+
+-- ❌ Esto FALLARÁ (línea no existe):
+INSERT INTO production_batches 
+(line_id, batch_code, target_quantity)
+VALUES (999, 'BATCH_TEST', 1000);
+-- Error: foreign key constraint fails
+
+-- ✅ Esto FUNCIONA (datos válidos):
+INSERT INTO production_batches 
+(line_id, batch_code, target_quantity)
+VALUES (1, 'BATCH_TEST', 1000);</div>
+        </div>
+        
+        <h2>Mapa Mental: Integridad Referencial</h2>
+        <div class="mermaid">
+mindmap
+  root((Integridad<br/>Referencial))
+    Primary Keys
+      Identificador único
+      NOT NULL
+      UNIQUE
+      AUTO_INCREMENT
+      Una columna o combinación
+    Foreign Keys
+      Referencia a otra tabla
+      Previene datos huérfanos
+      ON DELETE opciones
+      ON UPDATE opciones
+      Valida al INSERT/UPDATE
+    ON DELETE CASCADE
+      Borrar padre borra hijos
+      Útil para logs/eventos
+      Automático y seguro
+      Ejemplo: batch → events
+    ON DELETE RESTRICT
+      No permite borrar padre
+      Protege datos críticos
+      Fuerza limpieza manual
+      Ejemplo: line → batches
+    CHECK Constraints
+      Validación de valores
+      Rango de valores
+      Lógica de negocio
+      Ejecuta en INSERT/UPDATE
+    UNIQUE Constraints
+      Valor único en columna
+      Diferente a PRIMARY KEY
+      Puede tener NULLs
+      Ejemplo: batch_code
+        </div>
+        
+        <div class="concept-box">
+            <h3>🔗 Foreign Keys con CASCADE</h3>
+            <p><strong>Caso de Uso:</strong> Borrar un batch automáticamente borra sus eventos relacionados.</p>
+            
+            <div class="code-example">
+<strong>-- Definición con CASCADE:</strong>
+
+CREATE TABLE production_events (
+    event_id INT PRIMARY KEY,
+    batch_id INT NOT NULL,
+    event_type ENUM('start', 'stop', 'pause'),
+    
+    <span style="color: #f39c12;">CONSTRAINT fk_event_batch 
+    FOREIGN KEY (batch_id) 
+    REFERENCES production_batches(batch_id)
+    ON DELETE CASCADE  -- ⚠️ Borrar batch borra eventos
+    ON UPDATE CASCADE  -- ✅ Actualizar ID actualiza eventos</span>
+);
+
+<strong>-- Efecto:</strong>
+DELETE FROM production_batches WHERE batch_id = 5;
+-- ✅ Automáticamente borra todos los eventos del batch 5</div>
+        </div>
+        
+        <div class="concept-box">
+            <h3>🛡️ Foreign Keys con RESTRICT</h3>
+            <p><strong>Caso de Uso:</strong> Proteger líneas de producción - no se pueden borrar si tienen batches activos.</p>
+            
+            <div class="code-example">
+<strong>-- Definición con RESTRICT:</strong>
+
+CREATE TABLE production_batches (
+    batch_id INT PRIMARY KEY,
+    line_id INT NOT NULL,
+    
+    <span style="color: #e74c3c;">CONSTRAINT fk_batch_line 
+    FOREIGN KEY (line_id) 
+    REFERENCES production_lines(line_id)
+    ON DELETE RESTRICT  -- ❌ No permite borrar línea con batches
+    ON UPDATE CASCADE   -- ✅ Permite actualizar ID</span>
+);
+
+<strong>-- Efecto:</strong>
+DELETE FROM production_lines WHERE line_id = 1;
+-- ❌ Error: Cannot delete - referenced by batches
+-- Debes borrar primero todos los batches de esa línea</div>
+        </div>
+        
+        <h2>🎯 Flujo de Transacción ACID Completa</h2>
+        <div class="mermaid">
+sequenceDiagram
+    participant App as 📱 Aplicación
+    participant DB as 💾 MySQL
+    participant Log as 📝 WAL (Write-Ahead Log)
+    
+    App->>DB: BEGIN TRANSACTION
+    Note over DB: Estado: INICIADA
+    
+    App->>DB: INSERT INTO production_batches
+    DB->>DB: Validar constraints
+    DB->>Log: Escribir en WAL
+    Note over DB: Aún no permanente
+    
+    App->>DB: INSERT INTO production_events
+    DB->>DB: Validar FK exists
+    DB->>Log: Escribir en WAL
+    Note over DB: Aún en memoria
+    
+    App->>DB: UPDATE production_lines
+    DB->>DB: Validar datos
+    DB->>Log: Escribir en WAL
+    
+    alt Todo OK
+        App->>DB: COMMIT
+        DB->>DB: ✅ Hacer cambios permanentes
+        DB->>Log: Marcar como committed
+        DB-->>App: SUCCESS
+        Note over DB: Durability garantizada
+    else Error encontrado
+        App->>DB: ROLLBACK
+        DB->>DB: ❌ Deshacer todos los cambios
+        DB->>Log: Marcar como rolled back
+        DB-->>App: ROLLED BACK
+        Note over DB: Vuelve a estado anterior
+    end
+        </div>
+        
+        <div class="concept-box">
+            <h3>💡 Ejemplo Completo: Stored Procedure con ACID</h3>
+            <div class="code-example">
+DELIMITER $$
+
+CREATE PROCEDURE crear_batch_seguro(
+    IN p_line_id INT,
+    IN p_batch_code VARCHAR(50),
+    IN p_target_quantity INT,
+    OUT p_resultado VARCHAR(100)
+)
+BEGIN
+    -- ❗ Handler: Si hay error, hacer ROLLBACK automático
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET p_resultado = 'ERROR: Transacción revertida';
+    END;
+    
+    -- 🔒 Iniciar transacción ACID
+    START TRANSACTION;
+    
+    -- ✅ Validación 1: Línea existe y está activa
+    IF NOT EXISTS (
+        SELECT 1 FROM production_lines 
+        WHERE line_id = p_line_id AND status = 'active'
+    ) THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Línea no existe o no está activa';
+    END IF;
+    
+    -- ✅ Validación 2: Código de batch único
+    IF EXISTS (
+        SELECT 1 FROM production_batches 
+        WHERE batch_code = p_batch_code
+    ) THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Código de batch duplicado';
+    END IF;
+    
+    -- ✏️ Paso 1: Insertar batch
+    INSERT INTO production_batches (
+        line_id, batch_code, target_quantity, status
+    ) VALUES (
+        p_line_id, p_batch_code, p_target_quantity, 'in_progress'
+    );
+    
+    -- ✏️ Paso 2: Registrar evento de inicio
+    INSERT INTO production_events (
+        batch_id, event_type, event_description
+    ) VALUES (
+        LAST_INSERT_ID(), 
+        'start', 
+        CONCAT('Batch ', p_batch_code, ' iniciado')
+    );
+    
+    -- 💾 Si todo OK, confirmar cambios permanentemente
+    COMMIT;
+    SET p_resultado = CONCAT('✅ Batch ', p_batch_code, ' creado');
+END$$
+
+DELIMITER ;</div>
+        </div>
+        
+        <h2>📊 Normalización vs Desnormalización</h2>
+        <div class="mermaid">
+graph TB
+    subgraph "❌ Datos NO Normalizados - Redundancia"
+        T1["Tabla: orders<br/>--------------<br/>order_id | customer_name | customer_email | customer_phone | product_name | product_price<br/>1 | Juan Pérez | juan@email.com | 555-1234 | Sensor A | $100<br/>2 | Juan Pérez | juan@email.com | 555-1234 | Sensor B | $200<br/>⚠️ Nombre/email/teléfono REPETIDOS"]
+    end
+    
+    subgraph "✅ Datos Normalizados - Sin Redundancia"
+        T2["Tabla: customers<br/>--------------<br/>customer_id | name | email | phone<br/>1 | Juan Pérez | juan@email.com | 555-1234"]
+        T3["Tabla: products<br/>--------------<br/>product_id | name | price<br/>101 | Sensor A | $100<br/>102 | Sensor B | $200"]
+        T4["Tabla: orders<br/>--------------<br/>order_id | customer_id | product_id<br/>1 | 1 | 101<br/>2 | 1 | 102"]
+        
+        T4 -->|FK| T2
+        T4 -->|FK| T3
+    end
+    
+    style T1 fill:#ffcccc
+    style T2 fill:#ccffcc
+    style T3 fill:#ccffcc
+    style T4 fill:#ccffcc
+        </div>
+        
+        <div class="concept-box">
+            <h3>🎯 Beneficios de MySQL en IIoT</h3>
+            <ul>
+                <li><strong>✅ Integridad de Datos</strong> - Constraints previenen datos inválidos</li>
+                <li><strong>✅ Transacciones Seguras</strong> - ACID garantiza consistencia</li>
+                <li><strong>✅ Relaciones Complejas</strong> - JOINs permiten consultas sofisticadas</li>
+                <li><strong>✅ Reportes Avanzados</strong> - Agregaciones multi-tabla</li>
+                <li><strong>✅ Auditoría y Trazabilidad</strong> - Foreign Keys mantienen historial</li>
+                <li><strong>✅ Madurez y Soporte</strong> - Tecnología probada por décadas</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default'
+        });
+    </script>
+</body>
+</html>

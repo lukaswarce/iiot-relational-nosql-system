@@ -1,0 +1,35 @@
+apiVersion: 1
+
+# ==============================================================================
+# GRAFANA DASHBOARDS - Configuración de Provisioning
+# ==============================================================================
+# Este archivo indica a Grafana dónde encontrar los dashboards
+# Los dashboards en JSON se cargan automáticamente al iniciar
+# ==============================================================================
+
+providers:
+  - name: 'IIoT Dashboards'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false
+
+# ==============================================================================
+# NOTAS
+# ==============================================================================
+#
+# Los archivos JSON de dashboards deben estar en:
+# /etc/grafana/provisioning/dashboards/
+#
+# Configurado en docker-compose.yml como volumen:
+# ./grafana/provisioning:/etc/grafana/provisioning
+#
+# allowUiUpdates: true permite a estudiantes modificar dashboards en UI
+# disableDeletion: false permite borrar dashboards si es necesario
+#
+# ==============================================================================

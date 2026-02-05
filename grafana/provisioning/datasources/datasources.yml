@@ -1,0 +1,90 @@
+apiVersion: 1
+
+# ==============================================================================
+# GRAFANA DATASOURCES - Configuración Automática
+# ==============================================================================
+# Este archivo configura las fuentes de datos de Grafana automáticamente
+# al iniciar el contenedor (provisioning)
+# ==============================================================================
+
+datasources:
+  # ============================================================================
+  # INFLUXDB - Time-Series Database
+  # ============================================================================
+  - name: InfluxDB_IIoT
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    # InfluxDB 2.x usa Flux query language
+    jsonData:
+      version: Flux
+      organization: iiot-class
+      defaultBucket: iiot_sensors
+      tlsSkipVerify: true
+    # Token de autenticación (debe coincidir con .env)
+    secureJsonData:
+      token: my-super-secret-auth-token
+    uid: influxdb_iiot
+    isDefault: true
+    editable: true
+
+  # ============================================================================
+  # MYSQL - Relational Database
+  # ============================================================================
+  - name: MySQL_IIoT
+    type: mysql
+    access: proxy
+    url: mysql:3306
+    database: iiot_db
+    user: student
+    # Password (debe coincidir con .env)
+    secureJsonData:
+      password: student123
+    jsonData:
+      maxOpenConns: 10
+      maxIdleConns: 2
+      connMaxLifetime: 14400
+    uid: mysql_iiot
+    isDefault: false
+    editable: true
+
+# ==============================================================================
+# NOTAS DE CONFIGURACIÓN
+# ==============================================================================
+#
+# URLS INTERNAS:
+# --------------
+# Usar nombres de servicio de Docker (no localhost):
+# - influxdb:8086 (no localhost:8086)
+# - mysql:3306 (no localhost:3306)
+#
+# CREDENCIALES:
+# -------------
+# Las credenciales deben coincidir con .env:
+# - InfluxDB Token: INFLUXDB_TOKEN
+# - MySQL Password: MYSQL_PASSWORD
+#
+# FLUX QUERIES (InfluxDB):
+# ------------------------
+# from(bucket: "iiot_sensors")
+#   |> range(start: -1h)
+#   |> filter(fn: (r) => r._measurement == "temperature")
+#
+# SQL QUERIES (MySQL):
+# --------------------
+# SELECT 
+#   line_name, 
+#   SUM(actual_quantity) as total_production
+# FROM production_lines pl
+# JOIN production_batches pb ON pl.line_id = pb.line_id
+# GROUP BY line_name
+#
+# TROUBLESHOOTING:
+# ----------------
+# Si no conecta a datasources:
+# 1. Verificar servicios corriendo: docker-compose ps
+# 2. Verificar credenciales en .env
+# 3. Ver logs: docker-compose logs grafana
+# 4. Test de conexión en Grafana UI: Configuration → Data Sources → Test
+#
+# ==============================================================================

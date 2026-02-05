@@ -1,0 +1,9 @@
+{
+  "mysql_config": {
+    "user": "root",
+    "password": "rootpass123"
+  },
+  "influx_config": {
+    "token": "my-super-secret-auth-token"
+  }
+}

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagramas IIoT - Índice</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .diagram-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .diagram-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 30px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: #2c3e50;
+            display: block;
+        }
+        
+        .diagram-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+        
+        .diagram-icon {
+            font-size: 4em;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .diagram-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .diagram-description {
+            text-align: center;
+            color: #555;
+            line-height: 1.6;
+        }
+        
+        .card-mysql {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        }
+        
+        .card-influxdb {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        }
+        
+        .card-flow {
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);
+        }
+        
+        .card-comparison {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        }
+        
+        .card-concepts {
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+        }
+        
+        .instructions {
+            background: #e8f5e9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 5px solid #4caf50;
+        }
+        
+        .instructions h2 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+        }
+        
+        .instructions ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .instructions li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        
+        .instructions li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4caf50;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .footer {
+            background: #34495e;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Diagramas Interactivos - Sistema IIoT</h1>
+            <p>Instructor: Christian Spana</p>
+            <p>Bases de Datos Relacionales y No Relacionales</p>
+        </div>
+        
+        <div class="content">
+            <div class="instructions">
+                <h2>📖 Instrucciones de Uso</h2>
+                <ul>
+                    <li>Haz clic en cualquier tarjeta para ver el diagrama completo</li>
+                    <li>Los diagramas son interactivos y se renderizan en tiempo real</li>
+                    <li>Puedes tomar capturas de pantalla para tus presentaciones</li>
+                    <li>Cada diagrama incluye explicaciones detalladas</li>
+                    <li>Compatible con todos los navegadores modernos</li>
+                </ul>
+            </div>
+            
+            <h2 style="text-align: center; margin-bottom: 20px; color: #2c3e50;">Selecciona un Diagrama:</h2>
+            
+            <div class="diagram-grid">
+                <a href="01-diagrama-er-mysql.html" class="diagram-card card-mysql">
+                    <div class="diagram-icon">🗄️</div>
+                    <div class="diagram-title">Diagrama ER - MySQL</div>
+                    <div class="diagram-description">
+                        Diagrama Entidad-Relación completo mostrando las 8 tablas del sistema con Foreign Keys, Primary Keys y relaciones.
+                    </div>
+                </a>
+                
+                <a href="02-estructura-influxdb.html" class="diagram-card card-influxdb">
+                    <div class="diagram-icon">⏱️</div>
+                    <div class="diagram-title">Estructura InfluxDB</div>
+                    <div class="diagram-description">
+                        Organización de measurements, tags, fields y timestamps en la base de datos de series temporales.
+                    </div>
+                </a>
+                
+                <a href="03-flujo-datos-completo.html" class="diagram-card card-flow">
+                    <div class="diagram-icon">🔄</div>
+                    <div class="diagram-title">Flujo de Datos</div>
+                    <div class="diagram-description">
+                        Arquitectura completa mostrando cómo fluyen los datos desde los sensores hasta Grafana a través de MQTT.
+                    </div>
+                </a>
+                
+                <a href="04-comparacion-mysql-influxdb.html" class="diagram-card card-comparison">
+                    <div class="diagram-icon">⚖️</div>
+                    <div class="diagram-title">Comparación MySQL vs InfluxDB</div>
+                    <div class="diagram-description">
+                        Tabla comparativa detallada, casos de uso específicos y análisis de performance entre ambas bases de datos.
+                    </div>
+                </a>
+                
+                <a href="05-conceptos-mysql.html" class="diagram-card card-concepts card-mysql">
+                    <div class="diagram-icon">🎓</div>
+                    <div class="diagram-title">Conceptos MySQL - ACID</div>
+                    <div class="diagram-description">
+                        Mapas mentales explicando ACID, integridad referencial, transacciones y constraints con ejemplos prácticos.
+                    </div>
+                </a>
+                
+                <a href="06-conceptos-influxdb.html" class="diagram-card card-concepts card-influxdb">
+                    <div class="diagram-icon">⚡</div>
+                    <div class="diagram-title">Conceptos InfluxDB - Time Series</div>
+                    <div class="diagram-description">
+                        Estructura de datos, consultas Flux, políticas de retención y optimizaciones para series temporales.
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Sistema IIoT - Demostración Educativa</strong></p>
+            <p>Curso: Uso de Bases de Datos en Tecnologías de Operación (IIoT)</p>
+             <p>Instructor: Christian Spana</p>
+        </div>
+    </div>
+</body>
+</html>

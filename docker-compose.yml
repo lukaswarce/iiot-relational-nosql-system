@@ -1,0 +1,199 @@
+version: "3.8"
+
+services:
+  # ============================================================================
+  # MOSQUITTO - Broker MQTT (Centro de Comunicaciones IIoT)
+  # ============================================================================
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: iiot-mosquitto
+    ports:
+      - "1883:1883" # Puerto MQTT
+      - "9001:9001" # Puerto WebSockets MQTT
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_logs:/mosquitto/log
+    networks:
+      - iiot-network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mosquitto_sub",
+          "-t",
+          "$$SYS/#",
+          "-C",
+          "1",
+          "-i",
+          "healthcheck",
+          "-W",
+          "3",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # NODE-RED - Orquestador y Procesamiento (Cerebro del Sistema)
+  # ============================================================================
+  nodered:
+    build:
+      context: ./nodered
+      dockerfile: Dockerfile
+    container_name: iiot-nodered
+    ports:
+      - "1880:1880" # Puerto UI Node-RED
+    volumes:
+      - nodered_data:/data
+    environment:
+      - TZ=America/Guayaquil
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Para conexión Factory I/O
+    networks:
+      - iiot-network
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+      - influxdb
+      - mysql
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1880"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # MYSQL - Base de Datos Relacional (Datos Transaccionales)
+  # ============================================================================
+  mysql:
+    image: mysql:8.0
+    container_name: iiot-mysql
+    ports:
+      - "3306:3306" # Puerto MySQL
+    volumes:
+      - ./mysql/init:/docker-entrypoint-initdb.d
+      - mysql_data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpass123}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-iiot_db}
+      - MYSQL_USER=${MYSQL_USER:-student}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-student123}
+    networks:
+      - iiot-network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD:-rootpass123}",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # INFLUXDB - Base de Datos Time-Series (Series Temporales)
+  # ============================================================================
+  influxdb:
+    image: influxdb:2.7
+    container_name: iiot-influxdb
+    ports:
+      - "8086:8086" # Puerto InfluxDB API/UI
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - influxdb_config:/etc/influxdb2
+      # - ./influxdb/init:/docker-entrypoint-initdb.d  # Comentado: usar DOCKER_INFLUXDB_INIT_* en su lugar
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_ADMIN_USER:-admin}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_ADMIN_PASSWORD:-admin123}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_ORG:-iiot-class}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_BUCKET:-iiot_sensors}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_TOKEN:-my-super-secret-auth-token}
+    networks:
+      - iiot-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # GRAFANA - Visualización y Dashboards (Monitoreo en Tiempo Real)
+  # ============================================================================
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: iiot-grafana
+    ports:
+      - "3000:3000" # Puerto Grafana UI
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=
+    networks:
+      - iiot-network
+    restart: unless-stopped
+    depends_on:
+      - influxdb
+      - mysql
+    healthcheck:
+      test:
+        ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # ADMINER - Inspector de Bases de Datos (Herramienta Web para SQL)
+  # ============================================================================
+  adminer:
+    image: adminer:4.8.1
+    container_name: iiot-adminer
+    ports:
+      - "8080:8080" # Puerto Adminer UI
+    environment:
+      - ADMINER_DEFAULT_SERVER=mysql
+    networks:
+      - iiot-network
+    restart: unless-stopped
+    depends_on:
+      - mysql
+
+# ==============================================================================
+# REDES
+# ==============================================================================
+networks:
+  iiot-network:
+    name: iiot-network
+    driver: bridge
+
+# ==============================================================================
+# VOLÚMENES (Persistencia de Datos)
+# ==============================================================================
+volumes:
+  mosquitto_data:
+    name: iiot-mosquitto-data
+  mosquitto_logs:
+    name: iiot-mosquitto-logs
+  nodered_data:
+    name: iiot-nodered-data
+  mysql_data:
+    name: iiot-mysql-data
+  influxdb_data:
+    name: iiot-influxdb-data
+  influxdb_config:
+    name: iiot-influxdb-config
+  grafana_data:
+    name: iiot-grafana-data

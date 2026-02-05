@@ -1,0 +1,179 @@
+name: Translation Sync Checker
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'docs/**/*.md'
+      - 'README*.md'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'docs/**/*.md'
+      - 'README*.md'
+
+jobs:
+  check-translation-sync:
+    runs-on: ubuntu-latest
+    name: Check if translations are in sync
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v41
+        with:
+          files: |
+            docs/**/*.md
+            README*.md
+      
+      - name: Check translation pairs
+        id: check-pairs
+        run: |
+          echo "out-of-sync-files=" >> $GITHUB_OUTPUT
+          out_of_sync=()
+          
+          # Define translation pairs
+          declare -A pairs=(
+            ["README.md"]="README.es.md"
+            ["README.es.md"]="README.md"
+            ["docs/en/MQTT-QUICK-GUIDE.md"]="docs/es/MQTT-GUIA-RAPIDA.md"
+            ["docs/es/MQTT-GUIA-RAPIDA.md"]="docs/en/MQTT-QUICK-GUIDE.md"
+            ["docs/en/QUERY-EXAMPLES.md"]="docs/es/CONSULTAS-EJEMPLO.md"
+            ["docs/es/CONSULTAS-EJEMPLO.md"]="docs/en/QUERY-EXAMPLES.md"
+            ["docs/en/EXERCISES.md"]="docs/es/EJERCICIOS.md"
+            ["docs/es/EJERCICIOS.md"]="docs/en/EXERCISES.md"
+          )
+          
+          # Check each changed file
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            if [[ -n "${pairs[$file]}" ]]; then
+              pair_file="${pairs[$file]}"
+              
+              # Check if pair file was also modified
+              if ! echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -q "$pair_file"; then
+                # Check modification times
+                file_time=$(git log -1 --format="%at" -- "$file")
+                pair_time=$(git log -1 --format="%at" -- "$pair_file" 2>/dev/null || echo "0")
+                
+                if [[ $file_time -gt $pair_time ]]; then
+                  out_of_sync+=("$file → $pair_file")
+                fi
+              fi
+            fi
+          done
+          
+          if [[ ${#out_of_sync[@]} -gt 0 ]]; then
+            echo "has-out-of-sync=true" >> $GITHUB_OUTPUT
+            printf -v joined '%s\n' "${out_of_sync[@]}"
+            echo "files<<EOF" >> $GITHUB_OUTPUT
+            echo "$joined" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "has-out-of-sync=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Create issue for out-of-sync translations
+        if: steps.check-pairs.outputs.has-out-of-sync == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const files = `${{ steps.check-pairs.outputs.files }}`;
+            const issueTitle = '🌐 Translation Update Needed';
+            const issueBody = `## Translation Synchronization Required
+            
+            The following files were modified but their translation pairs were not updated:
+            
+            ${files.split('\n').map(f => f ? `- \`${f}\`` : '').join('\n')}
+            
+            ### Action Required
+            
+            Please review the changes and update the corresponding translations to keep documentation in sync.
+            
+            ### Translation Guidelines
+            
+            - Review the [GLOSSARY.md](../blob/main/GLOSSARY.md) for terms that should not be translated
+            - Follow the translation workflow in [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md)
+            - Ensure technical terms remain in English (SQL keywords, Flux functions, service names)
+            - Test all code examples in both language versions
+            
+            ### Files to Update
+            
+            Check the list above for specific file pairs that need synchronization.
+            
+            ---
+            
+            **Triggered by**: ${{ github.event_name }} in ${{ github.ref }}
+            **Commit**: ${{ github.sha }}
+            **Author**: @${{ github.actor }}
+            `;
+            
+            // Check if issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'translation-needed'
+            });
+            
+            const existingIssue = issues.data.find(issue => issue.title === issueTitle);
+            
+            if (!existingIssue) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: issueTitle,
+                body: issueBody,
+                labels: ['translation-needed', 'documentation']
+              });
+              console.log('Created new translation sync issue');
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssue.number,
+                body: `## New out-of-sync files detected\n\n${issueBody}`
+              });
+              console.log(`Updated existing issue #${existingIssue.number}`);
+            }
+      
+      - name: Comment on PR if translations out of sync
+        if: |
+          github.event_name == 'pull_request' && 
+          steps.check-pairs.outputs.has-out-of-sync == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const files = `${{ steps.check-pairs.outputs.files }}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## ⚠️ Translation Sync Warning
+              
+              This PR modifies documentation files but does not update their translation pairs:
+              
+              ${files.split('\n').map(f => f ? `- \`${f}\`` : '').join('\n')}
+              
+              **Options:**
+              1. Update the translations in this PR
+              2. Merge as-is and update translations later (an issue will be created)
+              3. Add \`skip-translation-check\` label to bypass this warning
+              
+              See [GLOSSARY.md](../blob/main/GLOSSARY.md) and [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md) for guidelines.
+              `
+            });
+      
+      - name: Summary
+        run: |
+          if [[ "${{ steps.check-pairs.outputs.has-out-of-sync }}" == "true" ]]; then
+            echo "⚠️ Some translations are out of sync" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "${{ steps.check-pairs.outputs.files }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ All translations are in sync" >> $GITHUB_STEP_SUMMARY
+          fi

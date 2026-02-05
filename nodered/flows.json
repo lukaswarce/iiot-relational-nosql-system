@@ -1,0 +1,473 @@
+[
+  {
+    "id": "tab_info",
+    "type": "tab",
+    "label": "\u2139\ufe0f INSTRUCCIONES",
+    "disabled": false,
+    "info": "# Sistema IIoT - Bases de Datos Relacionales y No Relacionales\n\n## \ud83c\udf93 Instructor: Christian Spana\n\n### Flujos Disponibles:\n\n1. **\ud83d\udce1 MQTT Simulador Sensores** - Genera datos simulados de temperatura, presi\u00f3n y vibraci\u00f3n\n2. **\ud83c\udf21\ufe0f MQTT \u2192 InfluxDB** - Suscribe a sensores MQTT y almacena en Time-Series DB\n3. **\ud83c\udfed Producci\u00f3n \u2192 MySQL** - Almacena datos de producci\u00f3n en base relacional\n4. **\ud83d\udcb3 Demo ACID** - Demuestra transacciones y rollback\n5. **\u2696\ufe0f Comparaci\u00f3n Consultas** - Compara queries InfluxDB vs MySQL\n6. **\ud83d\udd04 Polyglot Integration** - Integraci\u00f3n cross-database\n7. **\ud83c\udfed Factory I/O** (Deshabilitado) - Integraci\u00f3n opcional con Factory I/O\n\n### Primeros Pasos:\n\n1. Verificar que todos los servicios est\u00e9n corriendo: `docker-compose ps`\n2. Hacer click en **Deploy** (bot\u00f3n rojo arriba a la derecha)\n3. Abrir la pesta\u00f1a **Debug** (panel derecho) para ver mensajes\n4. Explorar cada flujo en las pesta\u00f1as\n\n### Configuraci\u00f3n Importante:\n\n**InfluxDB:**\n- URL: http://influxdb:8086\n- Token: my-super-secret-auth-token\n- Org: iiot-class\n- Bucket: iiot_sensors\n\n**MySQL:**\n- Host: mysql\n- Database: iiot_db\n- User: student\n- Password: student123\n\n**MQTT:**\n- Broker: mqtt://mosquitto:1883\n- No requiere autenticaci\u00f3n\n\n### \ud83d\udcda Documentaci\u00f3n:\n\nConsultar README.md del proyecto para m\u00e1s informaci\u00f3n.\n"
+  },
+  {
+    "id": "tab_mqtt_sim",
+    "type": "tab",
+    "label": "\ud83d\udce1 MQTT Simulador Sensores",
+    "disabled": false,
+    "info": "# Simulador de Sensores MQTT\n\nEste flujo genera datos simulados de sensores industriales y los publica via MQTT.\n\n## Sensores Simulados:\n- Temperatura (cada 1 segundo)\n- Presi\u00f3n (cada 2 segundos)\n- Vibraci\u00f3n (cada 500ms)\n\n## Topics MQTT:\n- `iiot/sensors/temperature`\n- `iiot/sensors/pressure`\n- `iiot/sensors/vibration`\n\nPara ver los mensajes MQTT en tiempo real, abrir terminal:\n```\ndocker exec -it iiot-mosquitto mosquitto_sub -t 'iiot/sensors/#' -v\n```\n"
+  },
+  {
+    "id": "comment_mqtt_sim",
+    "type": "comment",
+    "z": "tab_mqtt_sim",
+    "name": "\ud83d\udce1 Simulador de Sensores Industriales \u2192 Publicaci\u00f3n MQTT",
+    "info": "",
+    "x": 250,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "inject_temp",
+    "type": "inject",
+    "z": "tab_mqtt_sim",
+    "name": "\u23f1\ufe0f Cada 1 segundo",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "1",
+    "crontab": "",
+    "once": true,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 100,
+    "wires": [
+      [
+        "func_gen_temp"
+      ]
+    ]
+  },
+  {
+    "id": "func_gen_temp",
+    "type": "function",
+    "z": "tab_mqtt_sim",
+    "name": "\ud83c\udf21\ufe0f Generar Temperatura (20-100\u00b0C)",
+    "func": "// Simular temperatura de proceso industrial con variaci\u00f3n realista\nconst baseTemp = 60; // Temperatura base\nconst variation = 20; // Variaci\u00f3n \u00b120\u00b0C\nconst noise = (Math.random() - 0.5) * 10; // Ruido\n\n// Agregar tendencia sinusoidal para simular ciclos de proceso\nconst time = Date.now() / 10000; // Ciclo lento\nconst trend = Math.sin(time) * variation;\n\nconst temperature = baseTemp + trend + noise;\n\n// Formato est\u00e1ndar IIoT\nmsg.payload = {\n    value: parseFloat(temperature.toFixed(2)),\n    unit: \"\u00b0C\",\n    sensor_id: \"TEMP_001\",\n    sensor_type: \"temperature\",\n    location: \"Linea_Produccion_1\",\n    timestamp: new Date().toISOString()\n};\n\nmsg.topic = \"iiot/sensors/temperature\";\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 390,
+    "y": 100,
+    "wires": [
+      [
+        "mqtt_out_temp",
+        "debug_temp"
+      ]
+    ]
+  },
+  {
+    "id": "mqtt_out_temp",
+    "type": "mqtt out",
+    "z": "tab_mqtt_sim",
+    "name": "\ud83d\udce4 Publicar a MQTT",
+    "topic": "",
+    "qos": "1",
+    "retain": "false",
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "mqtt_broker",
+    "x": 700,
+    "y": 100,
+    "wires": []
+  },
+  {
+    "id": "debug_temp",
+    "type": "debug",
+    "z": "tab_mqtt_sim",
+    "name": "\ud83d\udc1b Debug Temperatura",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 710,
+    "y": 140,
+    "wires": []
+  },
+  {
+    "id": "inject_pressure",
+    "type": "inject",
+    "z": "tab_mqtt_sim",
+    "name": "\u23f1\ufe0f Cada 2 segundos",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "2",
+    "crontab": "",
+    "once": true,
+    "onceDelay": 0.2,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 200,
+    "wires": [
+      [
+        "func_gen_pressure"
+      ]
+    ]
+  },
+  {
+    "id": "func_gen_pressure",
+    "type": "function",
+    "z": "tab_mqtt_sim",
+    "name": "\ud83d\udca8 Generar Presi\u00f3n (0-250 bar)",
+    "func": "// Simular presi\u00f3n hidr\u00e1ulica industrial\nconst basePressure = 150;\nconst variation = 50;\nconst noise = (Math.random() - 0.5) * 20;\n\nconst pressure = Math.max(0, Math.min(250, basePressure + variation * Math.random() + noise));\n\nmsg.payload = {\n    value: parseFloat(pressure.toFixed(2)),\n    unit: \"bar\",\n    sensor_id: \"PRESS_001\",\n    sensor_type: \"pressure\",\n    location: \"Sistema_Hidraulico\",\n    timestamp: new Date().toISOString()\n};\n\nmsg.topic = \"iiot/sensors/pressure\";\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 390,
+    "y": 200,
+    "wires": [
+      [
+        "mqtt_out_pressure",
+        "debug_pressure"
+      ]
+    ]
+  },
+  {
+    "id": "mqtt_out_pressure",
+    "type": "mqtt out",
+    "z": "tab_mqtt_sim",
+    "name": "\ud83d\udce4 Publicar a MQTT",
+    "topic": "",
+    "qos": "1",
+    "retain": "false",
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "mqtt_broker",
+    "x": 700,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "debug_pressure",
+    "type": "debug",
+    "z": "tab_mqtt_sim",
+    "name": "\ud83d\udc1b Debug Presi\u00f3n",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 700,
+    "y": 240,
+    "wires": []
+  },
+  {
+    "id": "comment_production",
+    "type": "comment",
+    "z": "tab_mqtt_sim",
+    "name": "\ud83c\udfed Contador de Producci\u00f3n (cada 5 minutos \u2192 MySQL)",
+    "info": "",
+    "x": 230,
+    "y": 320,
+    "wires": []
+  },
+  {
+    "id": "inject_production",
+    "type": "inject",
+    "z": "tab_mqtt_sim",
+    "name": "\u23f1\ufe0f Cada 5 minutos",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "300",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "5",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 380,
+    "wires": [
+      [
+        "func_gen_production"
+      ]
+    ]
+  },
+  {
+    "id": "func_gen_production",
+    "type": "function",
+    "z": "tab_mqtt_sim",
+    "name": "\ud83d\udcca Generar Evento Producci\u00f3n",
+    "func": "// Simular evento de producci\u00f3n\nconst units = Math.floor(Math.random() * 50) + 20; // 20-70 unidades\nconst quality_score = parseFloat((7 + Math.random() * 3).toFixed(1)); // 7.0-10.0\n\nmsg.payload = {\n    units_produced: units,\n    quality_score: quality_score,\n    line_id: Math.floor(Math.random() * 3) + 1, // 1-3\n    operator_id: \"OP\" + (Math.floor(Math.random() * 5) + 1).toString().padStart(3, '0'),\n    timestamp: new Date().toISOString()\n};\n\nmsg.topic = \"iiot/production/counter\";\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 390,
+    "y": 380,
+    "wires": [
+      [
+        "mqtt_out_production",
+        "debug_production"
+      ]
+    ]
+  },
+  {
+    "id": "mqtt_out_production",
+    "type": "mqtt out",
+    "z": "tab_mqtt_sim",
+    "name": "\ud83d\udce4 Publicar a MQTT",
+    "topic": "",
+    "qos": "1",
+    "retain": "false",
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "mqtt_broker",
+    "x": 700,
+    "y": 380,
+    "wires": []
+  },
+  {
+    "id": "debug_production",
+    "type": "debug",
+    "z": "tab_mqtt_sim",
+    "name": "\ud83d\udc1b Debug Producci\u00f3n",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 710,
+    "y": 420,
+    "wires": []
+  },
+  {
+    "id": "mqtt_broker",
+    "type": "mqtt-broker",
+    "name": "Mosquitto IIoT Broker",
+    "broker": "mosquitto",
+    "port": "1883",
+    "clientid": "",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthPayload": "",
+    "birthMsg": {},
+    "closeTopic": "",
+    "closeQos": "0",
+    "closePayload": "",
+    "closeMsg": {},
+    "willTopic": "",
+    "willQos": "0",
+    "willPayload": "",
+    "willMsg": {},
+    "userProps": "",
+    "sessionExpiry": ""
+  },
+  {
+    "id": "tab_mqtt_influx",
+    "type": "tab",
+    "label": "\ud83c\udf21\ufe0f MQTT \u2192 InfluxDB",
+    "disabled": false
+  },
+  {
+    "id": "mqtt_in_influx",
+    "type": "mqtt in",
+    "z": "tab_mqtt_influx",
+    "name": "\ud83d\udce5 Suscribir Temperatura",
+    "topic": "iiot/sensors/temperature",
+    "qos": "1",
+    "datatype": "json",
+    "broker": "mqtt_broker",
+    "x": 140,
+    "y": 100,
+    "wires": [
+      [
+        "func_influx",
+        "debug_influx"
+      ]
+    ]
+  },
+  {
+    "id": "func_influx",
+    "type": "function",
+    "z": "tab_mqtt_influx",
+    "name": "\ud83d\udd27 Preparar InfluxDB",
+    "func": "const data = msg.payload;\nmsg.payload = {temperature: data.value, sensor_id: data.sensor_id, location: data.location};\nreturn msg;",
+    "x": 400,
+    "y": 100,
+    "wires": [
+      [
+        "influx_out"
+      ]
+    ]
+  },
+  {
+    "id": "influx_out",
+    "type": "influxdb out",
+    "z": "tab_mqtt_influx",
+    "influxdb": "influx_config",
+    "name": "\ud83d\udcbe Escribir InfluxDB",
+    "measurement": "temperature",
+    "precision": "s",
+    "x": 680,
+    "y": 100,
+    "wires": []
+  },
+  {
+    "id": "debug_influx",
+    "type": "debug",
+    "z": "tab_mqtt_influx",
+    "name": "\ud83d\udc1b Debug",
+    "active": true,
+    "x": 400,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "tab_mqtt_mysql",
+    "type": "tab",
+    "label": "\ud83d\udcca MQTT \u2192 MySQL",
+    "disabled": false
+  },
+  {
+    "id": "mqtt_in_mysql",
+    "type": "mqtt in",
+    "z": "tab_mqtt_mysql",
+    "name": "\ud83d\udce5 Todos Sensores",
+    "topic": "iiot/sensors/#",
+    "qos": "1",
+    "datatype": "json",
+    "broker": "mqtt_broker",
+    "x": 140,
+    "y": 100,
+    "wires": [
+      [
+        "func_mysql"
+      ]
+    ]
+  },
+  {
+    "id": "func_mysql",
+    "type": "function",
+    "z": "tab_mqtt_mysql",
+    "name": "\ud83d\udd27 Preparar SQL",
+    "func": "const d = msg.payload;\nconst esc = s => String(s||'').replace(/'/g, \"''\");\nmsg.topic = `INSERT INTO sensor_readings (sensor_id, sensor_type, value, unit, location) VALUES ('${esc(d.sensor_id)}', '${esc(d.sensor_type)}', ${d.value}, '${esc(d.unit)}', '${esc(d.location)}')`;\nreturn msg;",
+    "x": 370,
+    "y": 100,
+    "wires": [
+      [
+        "mysql_out",
+        "debug_sql"
+      ]
+    ]
+  },
+  {
+    "id": "mysql_out",
+    "type": "mysql",
+    "z": "tab_mqtt_mysql",
+    "mydb": "mysql_config",
+    "name": "\ud83d\udcbe Insertar MySQL",
+    "x": 650,
+    "y": 100,
+    "wires": [
+      [
+        "debug_result"
+      ]
+    ]
+  },
+  {
+    "id": "debug_sql",
+    "type": "debug",
+    "z": "tab_mqtt_mysql",
+    "name": "\ud83d\udc1b SQL",
+    "active": true,
+    "complete": "topic",
+    "x": 620,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "debug_result",
+    "type": "debug",
+    "z": "tab_mqtt_mysql",
+    "name": "\ud83d\udc1b Resultado",
+    "active": true,
+    "x": 860,
+    "y": 100,
+    "wires": []
+  },
+  {
+    "id": "mqtt_broker",
+    "type": "mqtt-broker",
+    "name": "Mosquitto IIoT",
+    "broker": "mosquitto",
+    "port": "1883",
+    "clientid": "",
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true
+  },
+  {
+    "id": "influx_config",
+    "type": "influxdb",
+    "hostname": "influxdb",
+    "port": "8086",
+    "protocol": "http",
+    "database": "iiot_sensors",
+    "name": "InfluxDB IIoT",
+    "usetls": false,
+    "influxdbVersion": "2.0",
+    "url": "http://influxdb:8086",
+    "rejectUnauthorized": false,
+    "organization": "iiot-class",
+    "bucket": "iiot_sensors"
+  },
+  {
+    "id": "mysql_config",
+    "type": "MySQLdatabase",
+    "name": "MySQL IIoT",
+    "host": "mysql",
+    "port": "3306",
+    "db": "iiot_db",
+    "tz": "America/Guayaquil",
+    "charset": "UTF8"
+  }
+]

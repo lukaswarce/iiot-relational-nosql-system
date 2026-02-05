@@ -1,0 +1,63 @@
+MIT License
+
+Copyright (c) 2026 Christian Spana
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## Educational Use Notice
+
+This project is designed for **academic and educational purposes**. While the
+MIT License permits commercial use, please note:
+
+- This environment uses simplified security configurations suitable for learning
+- Default credentials are intentionally weak for educational accessibility
+- No authentication on some services (e.g., Node-RED, Mosquitto)
+- For production IIoT deployments, implement proper security measures:
+  - Strong authentication and authorization
+  - TLS/SSL encryption for all services
+  - Network isolation and firewall rules
+  - Secure credential management (secrets, vaults)
+  - Regular security updates and patches
+  - Compliance with industrial security standards (IEC 62443, etc.)
+
+**DO NOT deploy this configuration directly to production environments.**
+
+## Attribution
+
+When using this project in academic settings, please credit:
+
+**Instructor & Author**: Christian Spana  
+**Course**: Using Databases in Industrial IoT Operational Technologies  
+**Repository**: https://github.com/lukaswarce/iiot-relational-nosql-system
+
+## Third-Party Licenses
+
+This project uses the following open-source software:
+
+- **Docker**: Apache License 2.0
+- **MySQL**: GPL v2 (with FOSS License Exception)
+- **InfluxDB**: MIT License
+- **Grafana**: AGPL v3
+- **Mosquitto**: Eclipse Public License 2.0 / Eclipse Distribution License 1.0
+- **Node-RED**: Apache License 2.0
+- **Adminer**: Apache License 2.0 / GPL v2
+
+Please refer to each component's license for specific terms and conditions.
