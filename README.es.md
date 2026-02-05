@@ -77,9 +77,9 @@ Este proyecto proporciona un entorno Docker completo para enseñar y demostrar e
    ```bash
    # Si tienes git:
    git clone git@github.com:lukaswarce/iiot-relational-nosql-system.git
-   cd resources
    
    # O descargar ZIP y extraer
+   https://github.com/lukaswarce/iiot-relational-nosql-system/archive/refs/tags/v1.0.0.zip
    ```
 
 2. **Configurar variables de entorno**
